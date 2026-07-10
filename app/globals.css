@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm off-white background, cream cards, deep olive primary */
+    --background: 48 24% 96%;
+    --foreground: 80 8% 16%;
+    --card: 47 36% 99%;
+    --card-foreground: 80 8% 16%;
+    --popover: 47 36% 99%;
+    --popover-foreground: 80 8% 16%;
+    /* Deep olive green */
+    --primary: 82 32% 26%;
+    --primary-foreground: 60 30% 96%;
+    /* Muted sage */
+    --secondary: 84 16% 88%;
+    --secondary-foreground: 82 20% 24%;
+    --muted: 60 12% 92%;
+    --muted-foreground: 75 6% 42%;
+    --accent: 84 20% 90%;
+    --accent-foreground: 82 28% 22%;
+    /* Understated red */
+    --destructive: 6 52% 46%;
+    --destructive-foreground: 20 40% 97%;
+    /* Muted amber */
+    --warning: 38 68% 42%;
+    --warning-foreground: 44 60% 96%;
+    --border: 75 12% 84%;
+    --input: 75 12% 80%;
+    --ring: 82 32% 30%;
+    --radius: 0.625rem;
+    --sidebar: 82 18% 20%;
+    --sidebar-foreground: 70 18% 88%;
+    /* Chart palette: olive family with a few complements */
+    --chart-1: 82 34% 32%;
+    --chart-2: 90 22% 50%;
+    --chart-3: 45 40% 52%;
+    --chart-4: 160 18% 42%;
+    --chart-5: 25 42% 52%;
+    --chart-6: 82 14% 64%;
+    --chart-7: 200 22% 46%;
+    --chart-8: 350 26% 52%;
+  }
+
+  .dark {
+    --background: 80 8% 10%;
+    --foreground: 60 12% 90%;
+    --card: 80 8% 13%;
+    --card-foreground: 60 12% 90%;
+    --popover: 80 8% 13%;
+    --popover-foreground: 60 12% 90%;
+    --primary: 84 28% 58%;
+    --primary-foreground: 82 30% 12%;
+    --secondary: 82 10% 22%;
+    --secondary-foreground: 70 14% 84%;
+    --muted: 80 6% 18%;
+    --muted-foreground: 70 8% 60%;
+    --accent: 82 12% 22%;
+    --accent-foreground: 70 16% 86%;
+    --destructive: 6 48% 56%;
+    --destructive-foreground: 20 40% 97%;
+    --warning: 40 60% 56%;
+    --warning-foreground: 44 60% 10%;
+    --border: 80 6% 24%;
+    --input: 80 6% 28%;
+    --ring: 84 28% 58%;
+    --sidebar: 80 10% 8%;
+    --sidebar-foreground: 70 14% 84%;
+    --chart-1: 84 30% 56%;
+    --chart-2: 90 20% 66%;
+    --chart-3: 45 42% 62%;
+    --chart-4: 160 20% 56%;
+    --chart-5: 25 44% 62%;
+    --chart-6: 82 12% 44%;
+    --chart-7: 200 24% 58%;
+    --chart-8: 350 28% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "tnum";
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
