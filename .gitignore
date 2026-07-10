@@ -9,3 +9,6 @@ data/backups/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+initial-prompt
+.cursor/skills/
+skills/
