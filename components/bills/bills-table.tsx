@@ -9,7 +9,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, CircleCheck, Loader2, MoreHorizontal } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -38,8 +38,10 @@ interface BillsTableProps {
   onSortingChange: (sorting: SortingState) => void;
   onEdit: (bill: BillWithCategory) => void;
   onMarkPaid: (bill: BillWithCategory) => void;
+  onQuickPay: (bill: BillWithCategory) => void;
   onToggleActive: (bill: BillWithCategory) => void;
   onDelete: (bill: BillWithCategory) => void;
+  quickPayPendingId?: string | null;
 }
 
 function SortableHeader({ label, onClick }: { label: string; onClick: () => void }): React.JSX.Element {
@@ -58,8 +60,10 @@ export function BillsTable({
   onSortingChange,
   onEdit,
   onMarkPaid,
+  onQuickPay,
   onToggleActive,
   onDelete,
+  quickPayPendingId,
 }: BillsTableProps): React.JSX.Element {
   const columns = React.useMemo<ColumnDef<BillWithCategory>[]>(
     () => [
@@ -100,6 +104,18 @@ export function BillsTable({
         cell: ({ row }) => formatDateShort(row.original.nextDueDate),
       },
       {
+        accessorKey: "lastPaidDate",
+        header: ({ column }) => (
+          <SortableHeader label="Last Paid" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
+        ),
+        cell: ({ row }) =>
+          row.original.lastPaidDate ? (
+            <span className="tabular-nums">{formatDateShort(row.original.lastPaidDate)}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
         accessorKey: "isAutoPay",
         header: "Auto-pay",
         cell: ({ row }) =>
@@ -128,29 +144,48 @@ export function BillsTable({
         header: "",
         cell: ({ row }) => {
           const bill = row.original;
+          const isPending = quickPayPendingId === bill.id;
           return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Row actions">
-                  <MoreHorizontal className="h-4 w-4" />
+            <div className="flex items-center justify-end gap-1">
+              {bill.isActive ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Quick-pay ${bill.name}`}
+                  disabled={!!quickPayPendingId}
+                  onClick={() => onQuickPay(bill)}
+                  className="text-muted-foreground/50 hover:text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-40"
+                >
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CircleCheck className="h-4 w-4" />
+                  )}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(bill)}>Edit</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onMarkPaid(bill)}>Mark as paid</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onToggleActive(bill)}>
-                  {bill.isActive ? "Disable" : "Enable"}
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(bill)}>
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              ) : null}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Row actions">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(bill)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onMarkPaid(bill)}>Mark as paid</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onToggleActive(bill)}>
+                    {bill.isActive ? "Disable" : "Enable"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive" onClick={() => onDelete(bill)}>
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           );
         },
       },
     ],
-    [currency, onEdit, onMarkPaid, onToggleActive, onDelete]
+    [currency, onEdit, onMarkPaid, onQuickPay, onToggleActive, onDelete, quickPayPendingId]
   );
 
   const table = useReactTable({

@@ -26,6 +26,7 @@ import { DeleteBillDialog } from "@/components/bills/delete-bill-dialog";
 import { useCategories } from "@/hooks/use-categories";
 import { useSettings } from "@/hooks/use-settings";
 import { formatCents } from "@/lib/formatting/money";
+import { todayISO } from "@/lib/formatting/dates";
 import type { BillWithCategory } from "@/lib/repositories/bills";
 
 interface ApiEnvelope<T> {
@@ -86,6 +87,33 @@ export default function BillsPage(): React.JSX.Element {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: () => toast.error("Failed to update bill"),
+  });
+
+  const [quickPayPendingId, setQuickPayPendingId] = React.useState<string | null>(null);
+
+  const quickPayMutation = useMutation({
+    mutationFn: async (bill: BillWithCategory) => {
+      setQuickPayPendingId(bill.id);
+      const res = await fetch(`/api/bills/${bill.id}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paidDate: todayISO(),
+          amount: bill.amount,
+          createTransaction: true,
+          paymentMethod: "bank_transfer",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to pay bill");
+      return res.json();
+    },
+    onSuccess: (_, bill) => {
+      toast.success(`${bill.name} marked as paid`);
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: () => toast.error("Failed to mark bill as paid"),
+    onSettled: () => setQuickPayPendingId(null),
   });
 
   const allBills = data?.bills ?? [];
@@ -277,8 +305,10 @@ export default function BillsPage(): React.JSX.Element {
                 setFormOpen(true);
               }}
               onMarkPaid={setPayingBill}
+              onQuickPay={(b) => quickPayMutation.mutate(b)}
               onToggleActive={(b) => toggleActiveMutation.mutate(b)}
               onDelete={setDeletingBill}
+              quickPayPendingId={quickPayPendingId}
             />
           )}
         </div>

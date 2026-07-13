@@ -6,7 +6,7 @@ import {
 } from "@/lib/calculations/bills";
 import { periodFor } from "@/lib/calculations/pay-periods";
 import { todayISO } from "@/lib/formatting/dates";
-import { createBill, listBills } from "@/lib/repositories/bills";
+import { createBill, listBills, processAutoPayBills } from "@/lib/repositories/bills";
 import { receivedPaychecksInRange } from "@/lib/repositories/paychecks";
 import { getSettings } from "@/lib/repositories/settings";
 import type { BillFrequency } from "@/lib/types";
@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
   return handle(() => {
+    processAutoPayBills();
     const bills = listBills();
     const billLikes = bills.map((b) => ({
       amount: b.amount,

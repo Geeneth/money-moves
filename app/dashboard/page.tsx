@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -15,7 +15,10 @@ import {
   Target,
   Info,
   AlertTriangle,
+  CircleCheck,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,8 +32,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AutoPayNotifications } from "@/components/bills/auto-pay-notifications";
 import { formatCents } from "@/lib/formatting/money";
-import { formatDate, formatDateShort } from "@/lib/formatting/dates";
+import { formatDate, formatDateShort, todayISO } from "@/lib/formatting/dates";
 import type { DashboardData } from "@/lib/services/dashboard";
 
 interface ApiEnvelope<T> {
@@ -159,11 +163,43 @@ function DashboardBody({ data }: { data: DashboardData }): React.JSX.Element {
   const breakdown = data.breakdown!;
   const period = data.period!;
   const pace = data.pace!;
+  const queryClient = useQueryClient();
+
+  const [pendingBillId, setPendingBillId] = React.useState<string | null>(null);
+
+  const quickPayMutation = useMutation({
+    mutationFn: async (bill: { id: string; name: string; amount: number }) => {
+      setPendingBillId(bill.id);
+      const res = await fetch(`/api/bills/${bill.id}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paidDate: todayISO(),
+          amount: bill.amount,
+          createTransaction: true,
+          paymentMethod: "bank_transfer",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to pay bill");
+      return res.json();
+    },
+    onSuccess: (_, bill) => {
+      toast.success(`${bill.name} marked as paid`);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
+    },
+    onError: () => toast.error("Failed to mark bill as paid"),
+    onSettled: () => setPendingBillId(null),
+  });
 
   const showWarning = pace.overspending || breakdown.availableToSpend < 0 || pace.billsUnderfunded || pace.overPace;
 
   return (
     <div className="space-y-6">
+      {data.recentAutoPayPayments.length > 0 ? (
+        <AutoPayNotifications payments={data.recentAutoPayPayments} currency={currency} />
+      ) : null}
+
       {showWarning ? (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -319,6 +355,24 @@ function DashboardBody({ data }: { data: DashboardData }): React.JSX.Element {
                           </Badge>
                         ) : null}
                         <span className="font-medium tabular-nums">{formatCents(bill.amount, currency)}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Mark ${bill.name} as paid`}
+                              disabled={quickPayMutation.isPending}
+                              onClick={() => quickPayMutation.mutate(bill)}
+                              className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-emerald-600 disabled:opacity-40"
+                            >
+                              {pendingBillId === bill.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <CircleCheck className="h-4 w-4" />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Mark as paid</TooltipContent>
+                        </Tooltip>
                       </div>
                     </li>
                   ))}

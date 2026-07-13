@@ -17,12 +17,19 @@ import {
   type SpendingBreakdown,
 } from "@/lib/calculations/spending";
 import { fromISODate, todayISO } from "@/lib/formatting/dates";
-import { listBills } from "@/lib/repositories/bills";
+import {
+  getRecentAutoPayPayments,
+  listBills,
+  processAutoPayBills,
+  type RecentAutoPayPayment,
+} from "@/lib/repositories/bills";
 import { receivedPaychecksInRange, listPaychecks } from "@/lib/repositories/paychecks";
 import { getSettings } from "@/lib/repositories/settings";
 import { listGoals } from "@/lib/repositories/savings";
 import { transactionsInRange, listTransactions } from "@/lib/repositories/transactions";
 import type { BillFrequency, ContributionType, GoalStatus } from "@/lib/types";
+
+export type { RecentAutoPayPayment };
 
 export interface DashboardData {
   configured: boolean;
@@ -62,9 +69,15 @@ export interface DashboardData {
     categoryName: string | null;
   }>;
   nextPaycheck: { expectedDate: string; expectedAmount: number; status: string } | null;
+  recentAutoPayPayments: RecentAutoPayPayment[];
 }
 
 export function getDashboardData(): DashboardData {
+  // Process auto-pay bills before reading any data so the rest of the query
+  // reflects the advanced due dates and newly created transactions.
+  processAutoPayBills();
+  const recentAutoPayPayments = getRecentAutoPayPayments(7);
+
   const settings = getSettings();
   const today = todayISO();
 
@@ -88,6 +101,7 @@ export function getDashboardData(): DashboardData {
       savings: { allocatedThisPeriod: 0, totalSaved: 0, totalTarget: 0, activeGoals: 0 },
       recentTransactions: [],
       nextPaycheck: null,
+      recentAutoPayPayments,
     };
   }
 
@@ -209,5 +223,6 @@ export function getDashboardData(): DashboardData {
           status: nextCheck.status,
         }
       : null,
+    recentAutoPayPayments,
   };
 }

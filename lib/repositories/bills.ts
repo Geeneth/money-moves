@@ -1,4 +1,5 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { subDays } from "date-fns";
 import { getDb } from "@/lib/database/client";
 import {
   billPayments,
@@ -8,13 +9,24 @@ import {
   type BillRow,
 } from "@/lib/database/schema";
 import { advanceDueDate } from "@/lib/calculations/bills";
+import { todayISO, toISODate } from "@/lib/formatting/dates";
 import type { BillFrequency } from "@/lib/types";
 import { newId } from "@/lib/utils";
 import type { BillInput, BillPayInput } from "@/lib/validation/schemas";
 import { createTransaction } from "./transactions";
 
+export interface RecentAutoPayPayment {
+  id: string;
+  billId: string;
+  billName: string;
+  amount: number;
+  paidDate: string;
+  dueDate: string;
+}
+
 export interface BillWithCategory extends BillRow {
   categoryName: string | null;
+  lastPaidDate: string | null;
 }
 
 export function listBills(): BillWithCategory[] {
@@ -34,6 +46,9 @@ export function listBills(): BillWithCategory[] {
       createdAt: bills.createdAt,
       updatedAt: bills.updatedAt,
       categoryName: categories.name,
+      lastPaidDate: sql<string | null>`(
+        SELECT MAX(paid_date) FROM bill_payments WHERE bill_id = ${bills.id}
+      )`,
     })
     .from(bills)
     .leftJoin(categories, eq(bills.categoryId, categories.id))
@@ -161,4 +176,86 @@ export function billPaymentsInRange(fromISO: string, toISO: string): BillPayment
     const d = p.paidDate ?? p.dueDate;
     return d >= fromISO && d <= toISO;
   });
+}
+
+/**
+ * Process all active auto-pay bills whose next due date is on or before today.
+ * For each overdue bill, logs one payment per missed cycle at the actual due date
+ * and advances nextDueDate until it is in the future. Idempotent — skips cycles
+ * that already have a payment record.
+ */
+export function processAutoPayBills(): BillPaymentRow[] {
+  const db = getDb();
+  const today = todayISO();
+
+  const overdue = db
+    .select()
+    .from(bills)
+    .where(and(eq(bills.isActive, true), eq(bills.isAutoPay, true), lte(bills.nextDueDate, today)))
+    .all();
+
+  const processed: BillPaymentRow[] = [];
+
+  for (const bill of overdue) {
+    let current = getBill(bill.id);
+    if (!current) continue;
+
+    while (current.isActive && current.nextDueDate <= today) {
+      const existing = db
+        .select({ id: billPayments.id })
+        .from(billPayments)
+        .where(and(eq(billPayments.billId, current.id), eq(billPayments.dueDate, current.nextDueDate)))
+        .get();
+
+      if (existing) break; // already recorded; nextDueDate should have advanced — safety exit
+
+      const payment = payBill(current.id, {
+        paidDate: current.nextDueDate,
+        amount: current.amount,
+        createTransaction: true,
+        paymentMethod: "bank_transfer",
+      });
+      processed.push(payment);
+
+      const updated = getBill(current.id);
+      // Safety: if date didn't advance (e.g. one_time bill now inactive), stop.
+      if (!updated || updated.nextDueDate === current.nextDueDate) break;
+      current = updated;
+    }
+  }
+
+  return processed;
+}
+
+/**
+ * Return auto-pay bill payments from the last `days` days, enriched with bill name.
+ * Used to populate the dashboard auto-pay notification cards.
+ */
+export function getRecentAutoPayPayments(days: number): RecentAutoPayPayment[] {
+  const db = getDb();
+  const since = toISODate(subDays(new Date(), days));
+
+  const rows = db
+    .select({
+      id: billPayments.id,
+      billId: billPayments.billId,
+      billName: bills.name,
+      amount: billPayments.amount,
+      paidDate: billPayments.paidDate,
+      dueDate: billPayments.dueDate,
+    })
+    .from(billPayments)
+    .innerJoin(bills, eq(billPayments.billId, bills.id))
+    .where(and(eq(bills.isAutoPay, true), isNotNull(billPayments.paidDate), gte(billPayments.paidDate, since)))
+    .orderBy(desc(billPayments.paidDate))
+    .all();
+
+  return rows.map((r) => ({
+    id: r.id,
+    billId: r.billId,
+    billName: r.billName,
+    amount: r.amount,
+    paidDate: r.paidDate!, // guaranteed by isNotNull filter
+    dueDate: r.dueDate,
+  }));
 }
