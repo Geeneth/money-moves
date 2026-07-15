@@ -18,8 +18,8 @@ export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
 };
 
 export const PAYMENT_METHODS = [
-  "debit",
   "credit",
+  "debit",
   "cash",
   "bank_transfer",
   "other",
@@ -56,7 +56,10 @@ export const BILL_FREQUENCY_LABELS: Record<BillFrequency, string> = {
 };
 
 /** Occurrences per year for each recurring frequency. One-time bills are not annualized. */
-export const FREQUENCY_PER_YEAR: Record<Exclude<BillFrequency, "one_time">, number> = {
+export const FREQUENCY_PER_YEAR: Record<
+  Exclude<BillFrequency, "one_time">,
+  number
+> = {
   weekly: 52,
   biweekly: 26,
   monthly: 12,
@@ -84,9 +87,22 @@ export type SavingsMethod = (typeof SAVINGS_METHODS)[number];
 export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
 
-export const CURRENCIES = ["CAD", "USD", "EUR", "GBP", "AUD", "JPY", "INR", "LKR"] as const;
+export const CURRENCIES = [
+  "CAD",
+  "USD",
+  "EUR",
+  "GBP",
+  "AUD",
+  "JPY",
+  "INR",
+  "LKR",
+] as const;
 
-export const DEFAULT_CATEGORIES: ReadonlyArray<{ name: string; type: CategoryType; icon: string }> = [
+export const DEFAULT_CATEGORIES: ReadonlyArray<{
+  name: string;
+  type: CategoryType;
+  icon: string;
+}> = [
   { name: "Groceries", type: "expense", icon: "shopping-cart" },
   { name: "Restaurants", type: "expense", icon: "utensils" },
   { name: "Transportation", type: "expense", icon: "car" },

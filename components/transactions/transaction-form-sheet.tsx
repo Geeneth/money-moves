@@ -46,6 +46,11 @@ interface TransactionFormSheetProps {
   onOpenChange: (open: boolean) => void;
   /** Existing transaction to edit, or a partial prefill (e.g. from Duplicate). Omit for a fresh Add. */
   transaction?: TransactionWithCategory | (TransactionInput & { id?: string }) | null;
+  /**
+   * When provided, the sheet operates in "draft edit" mode: submitting calls this
+   * callback with the edited values instead of posting to the API.
+   */
+  onSave?: (values: TransactionInput) => void;
 }
 
 const NO_CATEGORY = "__none__";
@@ -67,7 +72,7 @@ function defaultValues(transaction?: TransactionFormSheetProps["transaction"]): 
     description: "",
     amount: 0,
     type: "expense",
-    paymentMethod: "debit",
+    paymentMethod: "credit",
     categoryId: null,
     notes: null,
   };
@@ -77,11 +82,13 @@ export function TransactionFormSheet({
   open,
   onOpenChange,
   transaction,
+  onSave,
 }: TransactionFormSheetProps): React.JSX.Element {
   const queryClient = useQueryClient();
   const { data: categories } = useCategories();
   const editingId = transaction && "id" in transaction ? transaction.id : undefined;
   const isEdit = Boolean(editingId);
+  const isDraft = Boolean(onSave);
 
   const {
     control,
@@ -125,15 +132,28 @@ export function TransactionFormSheet({
     },
   });
 
-  const onSubmit = handleSubmit((values) => mutation.mutate(values));
+  const onSubmit = handleSubmit((values) => {
+    if (onSave) {
+      onSave(values);
+      onOpenChange(false);
+    } else {
+      mutation.mutate(values);
+    }
+  });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>{isEdit ? "Edit Transaction" : "Add Transaction"}</SheetTitle>
+          <SheetTitle>
+            {isDraft ? "Review Transaction" : isEdit ? "Edit Transaction" : "Add Transaction"}
+          </SheetTitle>
           <SheetDescription>
-            {isEdit ? "Update the details of this transaction." : "Log a new transaction."}
+            {isDraft
+              ? "Review and adjust the parsed details before adding."
+              : isEdit
+                ? "Update the details of this transaction."
+                : "Log a new transaction."}
           </SheetDescription>
         </SheetHeader>
 
@@ -257,7 +277,7 @@ export function TransactionFormSheet({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {isEdit ? "Save changes" : "Add transaction"}
+              {isDraft ? "Confirm" : isEdit ? "Save changes" : "Add transaction"}
             </Button>
           </SheetFooter>
         </form>

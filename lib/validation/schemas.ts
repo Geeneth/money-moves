@@ -30,6 +30,13 @@ export const transactionInput = z.object({
 });
 export type TransactionInput = z.infer<typeof transactionInput>;
 
+export const transactionParseInput = z.object({
+  text: z.string().trim().min(3, "Dictation text is required").max(2000),
+  date: isoDate.default(() => new Date().toISOString().slice(0, 10)),
+  paymentMethod: z.enum(PAYMENT_METHODS).default("debit"),
+});
+export type TransactionParseInput = z.infer<typeof transactionParseInput>;
+
 export const billInput = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   amount: positiveCents,
