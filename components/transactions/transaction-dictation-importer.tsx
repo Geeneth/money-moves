@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Mic, Trash2, WandSparkles } from "lucide-react";
+import { Check, Mic, Pencil, Trash2, WandSparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import { formatCents } from "@/lib/formatting/money";
 import { todayISO } from "@/lib/formatting/dates";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS, type PaymentMethod } from "@/lib/types";
 import type { TransactionInput } from "@/lib/validation/schemas";
+import { TransactionFormSheet } from "@/components/transactions/transaction-form-sheet";
 
 interface ApiEnvelope<T> {
   data: T;
@@ -53,8 +54,9 @@ export function TransactionDictationImporter({
   const queryClient = useQueryClient();
   const [text, setText] = React.useState("");
   const [date, setDate] = React.useState(todayISO());
-  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("debit");
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("credit");
   const [drafts, setDrafts] = React.useState<TransactionInput[]>([]);
+  const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
 
   const parseMutation = useMutation({
     mutationFn: async (): Promise<ParseResponse> => {
@@ -103,6 +105,10 @@ export function TransactionDictationImporter({
 
   function removeDraft(index: number): void {
     setDrafts((current) => current.filter((_, i) => i !== index));
+  }
+
+  function updateDraft(index: number, values: TransactionInput): void {
+    setDrafts((current) => current.map((d, i) => (i === index ? values : d)));
   }
 
   return (
@@ -184,6 +190,15 @@ export function TransactionDictationImporter({
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label={`Edit ${draft.description}`}
+                  onClick={() => setEditingIndex(index)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   aria-label={`Remove ${draft.description}`}
                   onClick={() => removeDraft(index)}
                 >
@@ -194,6 +209,15 @@ export function TransactionDictationImporter({
           </div>
         ) : null}
       </CardContent>
+
+      <TransactionFormSheet
+        open={editingIndex !== null}
+        onOpenChange={(open) => { if (!open) setEditingIndex(null); }}
+        transaction={editingIndex !== null ? drafts[editingIndex] : null}
+        onSave={(values) => {
+          if (editingIndex !== null) updateDraft(editingIndex, values);
+        }}
+      />
     </Card>
   );
 }

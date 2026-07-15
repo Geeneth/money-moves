@@ -109,9 +109,14 @@ export async function parseTransactionsWithAI(
     };
   }
 
-  const categoryList = categories
-    .filter((category) => category.type !== "income")
-    .map((category) => ({ id: category.id, name: category.name, type: category.type }));
+  const categoryList = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    type: c.type,
+    ...(c.icon ? { icon: c.icon } : {}),
+  }));
+
+  const categoryIds = categoryList.map((c) => c.id);
 
   const response = await fetch(OPENAI_URL, {
     method: "POST",
@@ -125,7 +130,7 @@ export async function parseTransactionsWithAI(
         {
           role: "system",
           content:
-            "Extract personal finance transactions from dictated text. Return only valid JSON. Use cents for amount. Split multiple purchases into separate transactions. Prefer expense unless the user clearly describes income, a refund, a transfer, a bill payment, or savings. Choose a categoryId only from the provided categories, otherwise null.",
+            "Extract personal finance transactions from dictated text. Return only valid JSON. Use cents for amount. Split multiple purchases into separate transactions. Prefer expense unless the user clearly describes income, a refund, a transfer, a bill payment, or savings. Write the description in Title Case (e.g. 'Tim Hortons Coffee', 'Uber Eats', 'Netflix Subscription'). You MUST set categoryId to the most semantically appropriate id from the provided categories list — read the transaction description and match it to the best category by name and type. Only use null if no category is even remotely relevant.",
         },
         {
           role: "user",
@@ -138,11 +143,11 @@ export async function parseTransactionsWithAI(
               transactions: [
                 {
                   date: "YYYY-MM-DD",
-                  description: "merchant or item",
+                  description: "merchant or item in Title Case",
                   amount: "integer cents",
                   type: "expense|income|refund|transfer|bill_payment|savings",
                   paymentMethod: "debit|credit|cash|bank_transfer|other",
-                  categoryId: "category id or null",
+                  categoryId: "one of the category ids above, or null",
                   notes: "short provenance note or null",
                 },
               ],
@@ -178,7 +183,12 @@ export async function parseTransactionsWithAI(
                       type: "string",
                       enum: ["debit", "credit", "cash", "bank_transfer", "other"],
                     },
-                    categoryId: { anyOf: [{ type: "string" }, { type: "null" }] },
+                    categoryId: {
+                      anyOf: [
+                        ...(categoryIds.length > 0 ? [{ type: "string" as const, enum: categoryIds }] : [{ type: "string" as const }]),
+                        { type: "null" as const },
+                      ],
+                    },
                     notes: { anyOf: [{ type: "string" }, { type: "null" }] },
                   },
                 },
