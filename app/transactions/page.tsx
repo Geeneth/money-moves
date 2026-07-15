@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TransactionFilters, EMPTY_FILTERS, type TransactionFiltersState } from "@/components/transactions/transaction-filters";
+import { TransactionDictationImporter } from "@/components/transactions/transaction-dictation-importer";
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import { TransactionFormSheet } from "@/components/transactions/transaction-form-sheet";
 import { DeleteTransactionDialog } from "@/components/transactions/delete-transaction-dialog";
@@ -127,6 +128,8 @@ export default function TransactionsPage(): React.JSX.Element {
       />
 
       <div className="space-y-4">
+        <TransactionDictationImporter currency={currency} />
+
         <TransactionFilters value={filters} onChange={setFilters} />
 
         {!isLoading && !isError ? (

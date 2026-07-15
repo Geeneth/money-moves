@@ -1,6 +1,6 @@
 # Money Moves
 
-A local-first personal budgeting app built around biweekly pay periods. Runs entirely on your Mac — no account, no cloud, no internet connection required after install.
+A local-first personal budgeting app built around biweekly pay periods. Runs on your Mac with a local SQLite database; optional AI parsing can call OpenAI when you configure an API key.
 
 ## Requirements
 
@@ -18,6 +18,16 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000). On first launch you'll be taken through a short onboarding flow (currency, payday, paycheck amount, savings preference, initial bills, optional sample data). After that you'll land on the Dashboard.
 
 No separate database setup step is needed — the SQLite file and its tables are created automatically the first time the app runs.
+
+### AI transaction parsing (optional)
+
+The Transactions page includes a dictation box for text from Whispr or any other speech-to-text tool. Simple spending phrases are parsed locally. For LLM parsing, set an OpenAI API key before starting the app:
+
+```bash
+OPENAI_API_KEY=your_api_key npm run dev
+```
+
+You can optionally set `OPENAI_MODEL`; otherwise the parser uses `gpt-4o-mini`.
 
 ### Production workflow (optional)
 
@@ -38,7 +48,7 @@ data/budget.db
 
 relative to the project root. Two companion files (`data/budget.db-wal` and `data/budget.db-shm`) may also appear next to it — these are part of SQLite's write-ahead log and are normal; don't delete them while the app is running.
 
-Nothing is ever sent over the network. There is no authentication, no cloud database, and no external service calls.
+No budget data leaves your Mac unless you enable optional AI transaction parsing with `OPENAI_API_KEY`. When enabled, only the dictated text plus category names/ids needed for parsing are sent to OpenAI; the app still stores your budget locally and does not use authentication or a cloud database.
 
 ## Backing up your data
 
