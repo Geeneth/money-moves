@@ -2,6 +2,10 @@ node_modules/
 .next/
 out/
 
+# Electron build output
+dist-electron/
+electron/dist/
+
 # SQLite database files
 data/*.db
 data/*.db-journal

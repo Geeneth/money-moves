@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaySettingsSection } from "@/components/settings/pay-settings-section";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { BackupSection } from "@/components/settings/backup-section";
+import { DatabaseSection } from "@/components/settings/database-section";
 import { DangerZone } from "@/components/settings/danger-zone";
 import type { SettingsRow } from "@/lib/database/schema";
 
@@ -61,6 +62,7 @@ export default function SettingsPage(): React.JSX.Element {
           <PaySettingsSection settings={settings} />
           <CategoryManager />
           <BackupSection />
+          <DatabaseSection />
           <DangerZone />
         </div>
       ) : null}

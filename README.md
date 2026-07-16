@@ -29,14 +29,52 @@ OPENAI_API_KEY=your_api_key npm run dev
 
 You can optionally set `OPENAI_MODEL`; otherwise the parser uses `gpt-4o-mini`.
 
-### Production workflow (optional)
+### Desktop app (Electron)
+
+Money Moves can run as a native macOS (or Windows) desktop app with no browser or terminal required after the initial build.
+
+**First-time setup**
+
+```bash
+npm run electron:setup   # compile better-sqlite3 for system Node
+```
+
+**Run in dev mode** (opens an Electron window backed by Next.js dev server)
+
+```bash
+npm run electron:dev
+```
+
+**Build a distributable `.dmg`**
+
+```bash
+npm run electron:build
+```
+
+The output lands in `dist-electron/`. Install `Money Moves-<version>-arm64.dmg` on Apple Silicon or the plain `Money Moves-<version>.dmg` on Intel.
+
+**Data location in the packaged app**
+
+When running from the `.dmg`, the database lives at:
+
+```
+~/Library/Application Support/money-moves/budget.db
+```
+
+To migrate your existing dev data into the packaged app, quit the app and run:
+
+```bash
+cp data/budget.db* ~/Library/Application\ Support/money-moves/
+```
+
+### Browser-only workflow (optional)
 
 ```bash
 npm run build
 npm run start
 ```
 
-This builds an optimized production bundle and serves it on port 3000 (pass `-p <port>` to `next start` to change it).
+Builds an optimized production bundle and serves it on port 3000.
 
 ## Where your data lives
 
@@ -87,6 +125,7 @@ Settings → Danger Zone lets you:
 ```
 app/            Next.js App Router pages and API routes
 components/     UI components (ui/, layout/, and one folder per feature area)
+electron/       Electron main process, preload script, and tsconfig
 hooks/          Shared React Query hooks
 lib/
   calculations/   Pure, tested functions for pay periods, bills, savings, spending
@@ -99,11 +138,12 @@ lib/
   exports/        CSV generation
 drizzle/        Generated SQL migrations
 data/           Your SQLite database (created on first run, not checked into version control)
+dist-electron/  Electron build output — .dmg / .exe (gitignored)
 ```
 
 ## Tech stack
 
-Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Framer Motion · Recharts · SQLite · Drizzle ORM · Zod · React Hook Form · TanStack Table · TanStack Query · date-fns
+Next.js (App Router) · Electron · TypeScript · Tailwind CSS · shadcn/ui · Framer Motion · Recharts · SQLite · Drizzle ORM · Zod · React Hook Form · TanStack Table · TanStack Query · date-fns
 
 ## Testing
 
