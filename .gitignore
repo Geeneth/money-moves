@@ -2,6 +2,12 @@ node_modules/
 .next/
 out/
 
+# Electron build output & icons
+dist-electron/
+electron/dist/
+build/icon.icns
+build/icon.iconset/
+
 # SQLite database files
 data/*.db
 data/*.db-journal
