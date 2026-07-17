@@ -119,7 +119,7 @@ async function createWindow(): Promise<void> {
     height: 820,
     minWidth: 800,
     minHeight: 600,
-    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
+    titleBarStyle: "default",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

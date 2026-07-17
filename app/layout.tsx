@@ -7,6 +7,10 @@ import { Toaster } from "@/components/ui/sonner";
 export const metadata: Metadata = {
   title: "Money Moves",
   description: "A local-first personal budgeting app built around biweekly pay periods.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }): React.JSX.Element {

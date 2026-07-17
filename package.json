@@ -22,6 +22,7 @@
     "appId": "com.moneymoves.app",
     "productName": "Money Moves",
     "copyright": "Copyright © 2026",
+    "icon": "build/icon.icns",
     "directories": {
       "output": "dist-electron"
     },
