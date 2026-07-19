@@ -26,6 +26,8 @@ export const settings = sqliteTable("settings", {
   /** 0 = Sunday, 1 = Monday */
   weekStartDay: integer("week_start_day").notNull().default(0),
   theme: text("theme").notNull().default("light"),
+  /** bcrypt hash of the app lock password. Null means no lock is set. */
+  passwordHash: text("password_hash"),
   ...timestamps,
 });
 

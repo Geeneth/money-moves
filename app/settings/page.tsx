@@ -10,6 +10,7 @@ import { PaySettingsSection } from "@/components/settings/pay-settings-section";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { BackupSection } from "@/components/settings/backup-section";
 import { DatabaseSection } from "@/components/settings/database-section";
+import { PasswordSection } from "@/components/settings/password-section";
 import { DangerZone } from "@/components/settings/danger-zone";
 import type { SettingsRow } from "@/lib/database/schema";
 
@@ -63,6 +64,7 @@ export default function SettingsPage(): React.JSX.Element {
           <CategoryManager />
           <BackupSection />
           <DatabaseSection />
+          <PasswordSection />
           <DangerZone />
         </div>
       ) : null}
