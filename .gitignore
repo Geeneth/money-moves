@@ -15,6 +15,9 @@ data/*.db-wal
 data/*.db-shm
 data/backups/
 
+# Drizzle Studio cache
+.drizzle-studio/
+
 # Environment variables — never commit secrets
 .env
 .env.local

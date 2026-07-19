@@ -4,11 +4,13 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Menu } from "lucide-react";
+import { Lock, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useLock } from "@/components/auth/lock-provider";
+import { LockScreen } from "@/components/auth/lock-screen";
 
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -51,6 +53,21 @@ function NavLink({
   );
 }
 
+function LockButton(): React.JSX.Element | null {
+  const { passwordSet, lock } = useLock();
+  if (!passwordSet) return null;
+  return (
+    <button
+      onClick={lock}
+      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/60 transition-colors hover:text-sidebar-foreground"
+      title="Lock app"
+    >
+      <Lock className="h-4 w-4 shrink-0" />
+      <span>Lock</span>
+    </button>
+  );
+}
+
 function DesktopSidebar({ pathname }: { pathname: string }): React.JSX.Element {
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-sidebar-foreground/10 bg-sidebar md:flex">
@@ -66,6 +83,9 @@ function DesktopSidebar({ pathname }: { pathname: string }): React.JSX.Element {
           />
         ))}
       </nav>
+      <div className="px-3 pb-3">
+        <LockButton />
+      </div>
     </aside>
   );
 }
@@ -83,10 +103,13 @@ function MobileHeader({ onOpen }: { onOpen: () => void }): React.JSX.Element {
 export function AppShell({ children }: { children: React.ReactNode }): React.JSX.Element {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const { locked } = useLock();
 
   if (pathname?.startsWith("/onboarding")) {
     return <div className="flex min-h-screen w-full items-center justify-center bg-background p-6">{children}</div>;
   }
+
+  if (locked) return <LockScreen />;
 
   return (
     <div className="min-h-screen bg-background">
